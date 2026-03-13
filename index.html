@@ -1,0 +1,235 @@
+<!-- Md. Ariful Islam Opi -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Falling Ball Catch Game</title>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #154784;
+    color:  #fff;
+}
+
+h1 {
+    margin-top: 20px;
+}
+
+#gameArea {
+    width: 500px;
+    height: 400px;
+    background: #222;
+    margin: 20px auto;
+    position: relative;
+    overflow: hidden;
+    border: 4px solid bisque;
+    border-radius: 10px;
+}
+
+#basket {
+    width: 100px;
+    height: 15px;
+    background: #00c3ff;
+    position: absolute;
+    bottom: 10px;
+    left: 200px;
+    border-radius: 2px;
+}
+
+.object {
+    width: 25px;
+    height: 25px;
+    background: #ffcc00;
+    border-radius: 50%;
+    position: absolute;
+}
+
+#stats {
+    font-size: 18px;
+}
+
+button {
+    padding: 10px 18px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 15px;
+    background-color: bisque;
+}
+
+#message {
+    font-size: 18px;
+    font-weight: bold;
+    color: red;
+    margin-top: 8px;
+    height: 24px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Falling Object Catch Game</h1>
+
+<div id="stats">
+    Score: <span id="score">0</span> |
+    Lives: <span id="lives">3</span>
+</div>
+
+<div id="gameArea">
+    <div id="basket"></div>
+</div>
+
+<div id="message"></div>
+
+<button onclick="startGame()"><b>Start Game/Restart</b></button>
+
+<script>
+
+const gameArea = document.getElementById("gameArea");
+const basket = document.getElementById("basket");
+const messageBox = document.getElementById("message");
+
+let basketX = 200;
+let score = 0;
+let lives = 3;
+let gameRunning = false;
+
+let rightPressed = false;
+let leftPressed = false;
+
+let spawnInterval = null;
+let moveInterval = null;
+let activeFallIntervals = [];
+
+let fallSpeed = 4;
+let spawnDelay = 1200;
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "ArrowRight") rightPressed = true;
+    if (e.key === "ArrowLeft")  leftPressed  = true;
+});
+
+document.addEventListener("keyup", function(e) {
+    if (e.key === "ArrowRight") rightPressed = false;
+    if (e.key === "ArrowLeft")  leftPressed  = false;
+});
+
+function moveBasket() {
+    if (!gameRunning) return;
+
+    if (rightPressed && basketX < 400) basketX += 6;
+    if (leftPressed  && basketX > 0)   basketX -= 6;
+
+    basket.style.left = basketX + "px";
+}
+
+function createObject() {
+    if (!gameRunning) return;
+
+    const obj = document.createElement("div");
+    obj.classList.add("object");
+    obj.style.left = Math.random() * 470 + "px";
+    obj.style.top  = "0px";
+    gameArea.appendChild(obj);
+
+    const speed = fallSpeed;
+
+    const fallId = setInterval(function() {
+
+        if (!gameRunning) {
+            obj.remove();
+            clearInterval(fallId);
+            return;
+        }
+
+        let top = parseInt(obj.style.top);
+        obj.style.top = top + speed + "px";
+
+        if (top >= 375) {
+            const objLeft = parseInt(obj.style.left);
+            const caught = objLeft + 12 > basketX && objLeft + 12 < basketX + 100;
+
+            if (caught) {
+                score++;
+                document.getElementById("score").textContent = score;
+
+                if (score % 5 === 0) {
+                    fallSpeed  = Math.min(fallSpeed + 1, 14);
+                    spawnDelay = Math.max(spawnDelay - 100, 400);
+                    clearInterval(spawnInterval);
+                    spawnInterval = setInterval(createObject, spawnDelay);
+                }
+
+            } else {
+                if (lives > 0) {
+                    lives--;
+                    document.getElementById("lives").textContent = lives;
+                }
+
+                if (lives <= 0) {
+                    obj.remove();
+                    clearInterval(fallId);
+                    endGame();
+                    return;
+                }
+            }
+
+            obj.remove();
+            clearInterval(fallId);
+        }
+
+    }, 20);
+
+    activeFallIntervals.push(fallId);
+}
+
+function endGame() {
+    gameRunning = false;
+
+    clearInterval(spawnInterval);
+    clearInterval(moveInterval);
+    activeFallIntervals.forEach(function(id) { clearInterval(id); });
+    activeFallIntervals = [];
+    spawnInterval = null;
+    moveInterval  = null;
+
+    document.querySelectorAll(".object").forEach(function(o) { o.remove(); });
+
+    messageBox.textContent = "Game Over! Score: " + score;
+}
+
+function startGame() {
+    gameRunning = false;
+    clearInterval(spawnInterval);
+    clearInterval(moveInterval);
+    activeFallIntervals.forEach(function(id) { clearInterval(id); });
+    activeFallIntervals = [];
+    spawnInterval = null;
+    moveInterval  = null;
+
+    document.querySelectorAll(".object").forEach(function(o) { o.remove(); });
+
+    score      = 0;
+    lives      = 3;
+    basketX    = 200;
+    fallSpeed  = 4;
+    spawnDelay = 1200;
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("lives").textContent = lives;
+    basket.style.left = basketX + "px";
+    messageBox.textContent = "";
+
+    gameRunning = true;
+
+    spawnInterval = setInterval(createObject, spawnDelay);
+    moveInterval  = setInterval(moveBasket, 20);
+}
+</script>
+
+    </body>
+</html>
